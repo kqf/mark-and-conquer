@@ -23,6 +23,10 @@ const save = () => localStorage.setItem("pixels", JSON.stringify([...pixels]));
 // Pretend the network is slow, so the UI has to cope with waiting from day one.
 const delay = () => new Promise((resolve) => setTimeout(resolve, 80));
 
+// Fraction of writes the fake server rejects. Optimistic updates are a bet, and
+// a bet you always win teaches you nothing. Set to 0 to turn this off.
+const FAILURE_RATE = 0.1;
+
 export async function getBoard(): Promise<Board> {
   await delay();
   return BOARD;
@@ -39,6 +43,7 @@ export async function getPixels(): Promise<Pixel[]> {
 
 export async function setPixel(x: number, y: number, color: Color): Promise<void> {
   await delay();
+  if (Math.random() < FAILURE_RATE) throw new Error("the server rejected the write");
   pixels.set(`${x},${y}`, color);
   save();
 }
