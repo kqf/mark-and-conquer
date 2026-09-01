@@ -27,6 +27,29 @@ const delay = () => new Promise((resolve) => setTimeout(resolve, 80));
 // a bet you always win teaches you nothing. Set to 0 to turn this off.
 const FAILURE_RATE = 0.1;
 
+const COOLDOWN_MS = 5000;
+
+// When this user may place again. Persisted, because a cooldown a page refresh
+// can clear is not a cooldown.
+let nextAllowedAt = Number(localStorage.getItem("nextAllowedAt") ?? 0);
+
+// Thrown when a write arrives too early. Carries the deadline so the client can
+// correct itself instead of guessing.
+export class CooldownError extends Error {
+  nextAllowedAt: number;
+
+  constructor(nextAllowedAt: number) {
+    super("Still cooling down");
+    this.nextAllowedAt = nextAllowedAt;
+  }
+}
+
+// Asked once on load, so a refresh restores the timer instead of resetting it.
+export async function getCooldown(): Promise<number> {
+  await delay();
+  return nextAllowedAt;
+}
+
 export async function getBoard(): Promise<Board> {
   await delay();
   return BOARD;
@@ -41,9 +64,21 @@ export async function getPixels(): Promise<Pixel[]> {
   });
 }
 
-export async function setPixel(x: number, y: number, color: Color): Promise<void> {
+// The server owns the clock. It decides whether a write is too early, and it
+// returns the next deadline on every accepted write.
+export async function setPixel(
+  x: number,
+  y: number,
+  color: Color,
+): Promise<number> {
   await delay();
+  if (Date.now() < nextAllowedAt) throw new CooldownError(nextAllowedAt);
   if (Math.random() < FAILURE_RATE) throw new Error("the server rejected the write");
+
   pixels.set(`${x},${y}`, color);
   save();
+
+  nextAllowedAt = Date.now() + COOLDOWN_MS;
+  localStorage.setItem("nextAllowedAt", String(nextAllowedAt));
+  return nextAllowedAt;
 }
