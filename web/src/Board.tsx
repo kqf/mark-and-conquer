@@ -4,9 +4,10 @@ type Props = {
   board: Board;
   pixels: Pixel[];
   onPaint: (x: number, y: number) => void;
+  disabled: boolean;
 };
 
-export function BoardGrid({ board, pixels, onPaint }: Props) {
+export function BoardGrid({ board, pixels, onPaint, disabled }: Props) {
   const painted = new Map(pixels.map((p) => [`${p.x},${p.y}`, p.color]));
 
   const cells = [];
@@ -19,6 +20,7 @@ export function BoardGrid({ board, pixels, onPaint }: Props) {
           className="cell"
           style={{ background: painted.get(key) ?? board.background }}
           onClick={() => onPaint(x, y)}
+          disabled={disabled}
           title={key}
         />,
       );

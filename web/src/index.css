@@ -35,9 +35,19 @@ h1 {
   cursor: pointer;
 }
 
-.cell:hover {
+.cell:hover:enabled {
   outline: 2px solid #d7dadc;
   outline-offset: -2px;
+}
+
+.cell:disabled {
+  cursor: not-allowed;
+}
+
+.cooldown {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: #818384;
 }
 
 .palette {
