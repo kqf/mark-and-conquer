@@ -1,37 +1,10 @@
-// The fake backend. Every function here is async and returns what the real
-// HTTP API will return, so replacing these three bodies with fetch() calls is
-// the only change the rest of the app will ever see.
+// The HTTP client. Every function here talks to the real network; in
+// development MSW answers instead of Flask, but this file cannot tell the
+// difference and does not care. When the real API is ready, only API_URL
+// changes.
 import type { Board, Color, Pixel } from "./types";
 
-const BOARD: Board = {
-  width: 32,
-  height: 32,
-  background: "#FFFFFF",
-  palette: [
-    "#FFFFFF", "#D4D7D9", "#898D90", "#000000", "#FF4500",
-    "#FFA800", "#FFD635", "#00A368", "#2450A4", "#811E9F",
-  ],
-};
-
-// The whole "database": "x,y" -> color.
-const pixels = new Map<string, Color>(
-  JSON.parse(localStorage.getItem("pixels") ?? "[]"),
-);
-
-const save = () => localStorage.setItem("pixels", JSON.stringify([...pixels]));
-
-// Pretend the network is slow, so the UI has to cope with waiting from day one.
-const delay = () => new Promise((resolve) => setTimeout(resolve, 80));
-
-// Fraction of writes the fake server rejects. Optimistic updates are a bet, and
-// a bet you always win teaches you nothing. Set to 0 to turn this off.
-const FAILURE_RATE = 0.1;
-
-const COOLDOWN_MS = 5000;
-
-// When this user may place again. Persisted, because a cooldown a page refresh
-// can clear is not a cooldown.
-let nextAllowedAt = Number(localStorage.getItem("nextAllowedAt") ?? 0);
+const API_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 // Thrown when a write arrives too early. Carries the deadline so the client can
 // correct itself instead of guessing.
@@ -44,41 +17,49 @@ export class CooldownError extends Error {
   }
 }
 
-// Asked once on load, so a refresh restores the timer instead of resetting it.
-export async function getCooldown(): Promise<number> {
-  await delay();
-  return nextAllowedAt;
+// fetch() only rejects when the network itself fails; a 500 is a perfectly
+// successful round trip as far as it is concerned. So every non-2xx has to be
+// turned into an exception by hand, exactly once, here.
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...init?.headers },
+  });
+
+  if (response.status === 429) {
+    const { nextAllowedAt } = await response.json();
+    throw new CooldownError(nextAllowedAt);
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? `Request failed with ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function getBoard(): Promise<Board> {
-  await delay();
-  return BOARD;
+  return request<Board>("/board");
 }
 
 // One call returns the whole board, never one pixel at a time.
 export async function getPixels(): Promise<Pixel[]> {
-  await delay();
-  return [...pixels].map(([key, color]) => {
-    const [x, y] = key.split(",").map(Number);
-    return { x, y, color };
-  });
+  return request<Pixel[]>("/pixels");
 }
 
-// The server owns the clock. It decides whether a write is too early, and it
-// returns the next deadline on every accepted write.
-export async function setPixel(
-  x: number,
-  y: number,
-  color: Color,
-): Promise<number> {
-  await delay();
-  if (Date.now() < nextAllowedAt) throw new CooldownError(nextAllowedAt);
-  if (Math.random() < FAILURE_RATE) throw new Error("the server rejected the write");
+// Asked once on load, so a refresh restores the timer instead of resetting it.
+export async function getCooldown(): Promise<number> {
+  const { nextAllowedAt } = await request<{ nextAllowedAt: number }>("/cooldown");
+  return nextAllowedAt;
+}
 
-  pixels.set(`${x},${y}`, color);
-  save();
-
-  nextAllowedAt = Date.now() + COOLDOWN_MS;
-  localStorage.setItem("nextAllowedAt", String(nextAllowedAt));
+// The server owns the clock, and hands back the next deadline on every
+// accepted write.
+export async function setPixel(x: number, y: number, color: Color): Promise<number> {
+  const { nextAllowedAt } = await request<{ nextAllowedAt: number }>(
+    `/pixels/${x}/${y}`,
+    { method: "PUT", body: JSON.stringify({ color }) },
+  );
   return nextAllowedAt;
 }
