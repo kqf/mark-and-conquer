@@ -1,1 +1,4 @@
 .node-version
+__pycache__/
+*.pyc
+*.db
