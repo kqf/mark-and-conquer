@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # setuptools_scm reads the version from the tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run the tests
+        run: |
+          PYTHONFAULTHANDLER=2 pytest tests/
+
+      - name: Run pre-commit checks
+        uses: pre-commit/action@v3.0.1
+
+      - name: Check package metadata rendering (twine check)
+        run: |
+          pip install build twine
+          python -m build --sdist --wheel
+          twine check dist/*
