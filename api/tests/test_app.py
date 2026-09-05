@@ -26,11 +26,15 @@ def test_placing_a_pixel_starts_the_cooldown(client, api, clock):
     response = client.put("/api/pixels/0/0", json={"color": "#FF4500"})
 
     assert response.status_code == 200
-    assert response.get_json() == {"nextAllowedAt": clock.now + api.COOLDOWN_MS}
+    assert response.get_json() == {
+        "nextAllowedAt": clock.now + api.COOLDOWN_MS
+    }
 
 
 def test_cooldown_survives_a_reload(client):
-    deadline = client.put("/api/pixels/0/0", json={"color": "#FF4500"}).get_json()
+    deadline = client.put(
+        "/api/pixels/0/0", json={"color": "#FF4500"}
+    ).get_json()
 
     assert client.get("/api/cooldown").get_json() == deadline
 
@@ -46,7 +50,9 @@ def test_second_pixel_during_the_cooldown_is_rejected(client, api, clock):
 
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "5"
-    assert response.get_json() == {"nextAllowedAt": clock.now + api.COOLDOWN_MS}
+    assert response.get_json() == {
+        "nextAllowedAt": clock.now + api.COOLDOWN_MS
+    }
 
 
 def test_pixel_rejected_by_the_cooldown_is_not_drawn(client, clock):
@@ -59,7 +65,9 @@ def test_pixel_rejected_by_the_cooldown_is_not_drawn(client, clock):
     ]
 
 
-def test_pixel_can_be_overwritten_once_the_cooldown_expires(client, api, clock):
+def test_pixel_can_be_overwritten_once_the_cooldown_expires(
+    client, api, clock
+):
     client.put("/api/pixels/3/4", json={"color": "#FF4500"})
 
     clock.advance(api.COOLDOWN_MS)
@@ -122,7 +130,7 @@ def test_unknown_path_serves_the_spa(client, built_frontend):
     response = client.get("/some/deep/link")
 
     assert response.status_code == 200
-    assert b"<div id=\"root\">" in response.data
+    assert b'<div id="root">' in response.data
 
 
 def test_existing_file_is_served_as_is(client, built_frontend):

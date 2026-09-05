@@ -21,8 +21,16 @@ BOARD = {
     "height": 32,
     "background": "#FFFFFF",
     "palette": [
-        "#FFFFFF", "#D4D7D9", "#898D90", "#000000", "#FF4500",
-        "#FFA800", "#FFD635", "#00A368", "#2450A4", "#811E9F",
+        "#FFFFFF",
+        "#D4D7D9",
+        "#898D90",
+        "#000000",
+        "#FF4500",
+        "#FFA800",
+        "#FFD635",
+        "#00A368",
+        "#2450A4",
+        "#811E9F",
     ],
 }
 
@@ -33,15 +41,17 @@ DB_PATH = os.environ.get("DB_PATH", "pixels.db")
 # Where `npm run build` leaves the SPA. Serving it from Flask keeps the whole
 # app on a single origin, which is what makes the session cookie work without
 # CORS and without touching the frontend.
-DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "dist")
+DIST = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "web", "dist"
+)
 
 # static_folder=None because the catch-all route at the bottom does this job,
 # and Flask's built-in static route would shadow it.
 app = Flask(__name__, static_folder=None)
 
-# This only signs the session cookie, whose entire contents is a random id. Set
-# it in the environment anyway: without a stable key, a restart hands everyone a
-# new identity and wipes their cooldown.
+# This only signs the session cookie, whose entire contents is a random id.
+# Set it in the environment anyway: without a stable key, a restart hands
+# everyone a new identity and wipes their cooldown.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-not-a-secret")
 app.permanent_session_lifetime = timedelta(days=365)
 
@@ -94,9 +104,13 @@ def user_id():
 
 
 def deadline_for(user):
-    row = db().execute(
-        "SELECT next_allowed_at FROM cooldowns WHERE user_id = ?", (user,)
-    ).fetchone()
+    row = (
+        db()
+        .execute(
+            "SELECT next_allowed_at FROM cooldowns WHERE user_id = ?", (user,)
+        )
+        .fetchone()
+    )
     return row[0] if row else 0
 
 
@@ -118,8 +132,9 @@ def get_cooldown():
     return {"nextAllowedAt": deadline_for(user_id())}
 
 
-# signed=True so that a negative coordinate reaches this function and gets the
-# same 400 as one that is merely too large, rather than failing to route at all.
+# signed=True so that a negative coordinate reaches this function and gets
+# the same 400 as one that is merely too large, rather than failing to route
+# at all.
 @app.put("/api/pixels/<int(signed=True):x>/<int(signed=True):y>")
 def put_pixel(x, y):
     if not (0 <= x < BOARD["width"] and 0 <= y < BOARD["height"]):
@@ -152,7 +167,8 @@ def put_pixel(x, y):
     )
     connection.execute(
         "INSERT INTO cooldowns (user_id, next_allowed_at) VALUES (?, ?) "
-        "ON CONFLICT (user_id) DO UPDATE SET next_allowed_at = excluded.next_allowed_at",
+        "ON CONFLICT (user_id) DO UPDATE SET "
+        "next_allowed_at = excluded.next_allowed_at",
         (user, deadline),
     )
     connection.commit()
