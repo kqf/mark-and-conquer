@@ -4,10 +4,14 @@ repos:
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=1000"]
-      - id: check-json
       - id: check-docstring-first
       - id: end-of-file-fixer
       - id: trailing-whitespace
+
+  - repo: https://gitlab.com/bmares/check-json5
+    rev: v1.0.1
+    hooks:
+      - id: check-json5
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.3
