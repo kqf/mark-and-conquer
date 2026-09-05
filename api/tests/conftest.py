@@ -6,7 +6,7 @@ import pytest
 @pytest.fixture
 def api(tmp_path, monkeypatch):
     monkeypatch.setenv("DB_PATH", str(tmp_path / "pixels.db"))
-    import app
+    from markandconquer import app
 
     return importlib.reload(app)
 

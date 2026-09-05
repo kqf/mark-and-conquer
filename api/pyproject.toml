@@ -1,0 +1,66 @@
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+extend-select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    # "B",   # bugbear
+    # "C90", # mccabe
+    # "D",  # pydocstyle
+    "ERA",  # eradicate
+]
+ignore = [
+    "E203",
+    "B008", # Do not perform function call
+    "RUF009", # Don not perform partials
+    # "W503",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=markandconquer --cov-report=term-missing"
+
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mark-and-conquer"
+dynamic = ["version"]
+description = "A place where everyone paints one pixel at a time"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "flask>=3.1,<4",
+]
+
+[project.optional-dependencies]
+server = ["gunicorn>=23,<24"]
+
+[tool.setuptools]
+packages = [
+    "markandconquer",
+]
+include-package-data = true
+
+[tool.setuptools_scm]
+root = ".."  # The git repository is one level up, next to web/
+version_scheme = "post-release"  # Uses Git tags for versioning
