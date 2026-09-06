@@ -81,7 +81,6 @@ def test_cooldown_is_per_user(client, other_client, clock):
     client.put("/api/pixels/0/0", json={"color": "#FF4500"})
 
     response = other_client.put("/api/pixels/1/1", json={"color": "#FF4500"})
-
     assert response.status_code == 200
 
 

@@ -1,18 +1,27 @@
 """Mark and Conquer: the entire backend.
 
-One file, one SQLite database, no ORM. Every route here exists because
-web/src/api.ts calls it, and the shapes it returns are the ones
-web/src/mocks/handlers.ts was already pretending to return.
+One file, one SQLite database, mapped onto dataclasses with SQLAlchemy.
+Every route here exists because web/src/api.ts calls it, and the shapes it
+returns are the ones web/src/mocks/handlers.ts was already pretending to
+return.
 """
 
 import math
 import os
-import sqlite3
 import time
 import uuid
+from dataclasses import asdict
 from datetime import timedelta
 
 from flask import Flask, g, request, send_from_directory, session
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    Session,
+    mapped_column,
+)
 
 # The board is a constant, not a table: nothing can change it at runtime, so
 # storing it would only buy us a query.
@@ -56,37 +65,46 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-only-not-a-secret")
 app.permanent_session_lifetime = timedelta(days=365)
 
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS pixels (
-    x     INTEGER NOT NULL,
-    y     INTEGER NOT NULL,
-    color TEXT    NOT NULL,
-    PRIMARY KEY (x, y)
-);
-CREATE TABLE IF NOT EXISTS cooldowns (
-    user_id         TEXT    PRIMARY KEY,
-    next_allowed_at INTEGER NOT NULL
-);
-"""
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Mapped classes are real dataclasses. A row that comes back from a
+    query is therefore already the shape the JSON routes want: asdict() on
+    a Pixel is the response body, with no separate serializer to drift."""
+
+
+class Pixel(Base):
+    __tablename__ = "pixels"
+
+    x: Mapped[int] = mapped_column(primary_key=True)
+    y: Mapped[int] = mapped_column(primary_key=True)
+    color: Mapped[str]
+
+
+class Cooldown(Base):
+    __tablename__ = "cooldowns"
+
+    user_id: Mapped[str] = mapped_column(primary_key=True)
+    next_allowed_at: Mapped[int]
+
+
+engine = create_engine(f"sqlite:///{DB_PATH}")
 
 # Runs at import, so it happens under gunicorn too, not just `python app.py`.
-# Both statements are idempotent, so every worker may safely run them.
-with sqlite3.connect(DB_PATH) as _setup:
-    _setup.executescript(SCHEMA)
+# create_all emits CREATE TABLE IF NOT EXISTS, so every worker may run it.
+Base.metadata.create_all(engine)
 
 
 def db():
-    """One connection per request. SQLite connections are not thread-safe, and
-    a worker thread is exactly what would otherwise share one."""
+    """One session per request. A Session is not thread-safe, and a worker
+    thread is exactly what would otherwise share one."""
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = Session(engine)
     return g.db
 
 
 @app.teardown_appcontext
 def close_db(exception):
-    if connection := g.pop("db", None):
-        connection.close()
+    if (db_session := g.pop("db", None)) is not None:
+        db_session.close()
 
 
 def now_ms():
@@ -104,14 +122,8 @@ def user_id():
 
 
 def deadline_for(user):
-    row = (
-        db()
-        .execute(
-            "SELECT next_allowed_at FROM cooldowns WHERE user_id = ?", (user,)
-        )
-        .fetchone()
-    )
-    return row[0] if row else 0
+    row = db().get(Cooldown, user)
+    return row.next_allowed_at if row else 0
 
 
 @app.get("/api/board")
@@ -122,8 +134,7 @@ def get_board():
 # One call returns the whole board, never one pixel at a time.
 @app.get("/api/pixels")
 def get_pixels():
-    rows = db().execute("SELECT x, y, color FROM pixels").fetchall()
-    return [{"x": x, "y": y, "color": color} for x, y, color in rows]
+    return [asdict(pixel) for pixel in db().scalars(select(Pixel))]
 
 
 # Asked once on load, so a refresh restores the timer instead of resetting it.
@@ -159,19 +170,14 @@ def put_pixel(x, y):
         )
 
     deadline = now + COOLDOWN_MS
-    connection = db()
-    connection.execute(
-        "INSERT INTO pixels (x, y, color) VALUES (?, ?, ?) "
-        "ON CONFLICT (x, y) DO UPDATE SET color = excluded.color",
-        (x, y, color),
-    )
-    connection.execute(
-        "INSERT INTO cooldowns (user_id, next_allowed_at) VALUES (?, ?) "
-        "ON CONFLICT (user_id) DO UPDATE SET "
-        "next_allowed_at = excluded.next_allowed_at",
-        (user, deadline),
-    )
-    connection.commit()
+
+    # merge() is the ORM's upsert: it looks the row up by primary key, then
+    # inserts or updates. That costs one extra SELECT per placement, which
+    # is nothing against local SQLite at one pixel per cooldown per user.
+    db_session = db()
+    db_session.merge(Pixel(x=x, y=y, color=color))
+    db_session.merge(Cooldown(user_id=user, next_allowed_at=deadline))
+    db_session.commit()
 
     return {"nextAllowedAt": deadline}
 

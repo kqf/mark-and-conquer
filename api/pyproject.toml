@@ -50,6 +50,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     "flask>=3.1,<4",
+    "sqlalchemy>=2,<3",
 ]
 
 [project.optional-dependencies]
