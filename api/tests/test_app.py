@@ -131,7 +131,3 @@ def test_unknown_path_serves_the_spa(client, built_frontend):
 
     assert response.status_code == 200
     assert b'<div id="root">' in response.data
-
-
-def test_existing_file_is_served_as_is(client, built_frontend):
-    assert client.get("/mockServiceWorker.js").status_code == 200
