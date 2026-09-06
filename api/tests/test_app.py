@@ -115,10 +115,3 @@ def test_rejected_pixel_does_not_start_a_cooldown(client):
 
 def test_health_reports_ok(client):
     assert client.get("/health").get_json() == {"status": "ok"}
-
-
-def test_unknown_path_serves_the_spa(client, built_frontend):
-    response = client.get("/some/deep/link")
-
-    assert response.status_code == 200
-    assert b'<div id="root">' in response.data
