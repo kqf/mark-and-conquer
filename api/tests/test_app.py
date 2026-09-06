@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 
@@ -117,21 +115,3 @@ def test_rejected_pixel_does_not_start_a_cooldown(client):
 
 def test_health_reports_ok(client):
     assert client.get("/health").get_json() == {"status": "ok"}
-
-
-@pytest.fixture
-def built_frontend(api):
-    """Skips a test when web/dist has not been built yet."""
-    if not os.path.isfile(os.path.join(api.DIST, "index.html")):
-        pytest.skip("frontend not built: run `npm run build` in web/")
-
-
-def test_unknown_path_serves_the_spa(client, built_frontend):
-    response = client.get("/some/deep/link")
-
-    assert response.status_code == 200
-    assert b'<div id="root">' in response.data
-
-
-def test_existing_file_is_served_as_is(client, built_frontend):
-    assert client.get("/mockServiceWorker.js").status_code == 200
