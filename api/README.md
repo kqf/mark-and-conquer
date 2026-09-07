@@ -1,9 +1,5 @@
 # Mark and Conquer: the API
 
-The Flask backend: one file, one SQLite database, no ORM. It serves
-`/api/*` and, once `web/` has been built, the SPA in `web/dist` from the
-same origin.
-
 ## Development
 
 ```sh
@@ -12,6 +8,17 @@ pip install -e .
 pytest tests/
 ```
 
-Run it with `flask --app markandconquer.app run --debug`. For production,
-`pip install -e .[server]` pulls in gunicorn:
-`gunicorn markandconquer.app:app`.
+## Running the server
+
+Starting with various servers
+
+```bash
+# For dev server use either
+flask --app markandconquer.app run --debug
+
+# or
+python -m markandconquer.app
+
+# For production use:
+gunicorn 'markandconquer.app:create_app()'
+```

@@ -1,4 +1,5 @@
 import pytest
+from markandconquer import app as module
 
 from markandconquer import app as module
 
