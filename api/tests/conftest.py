@@ -1,24 +1,29 @@
-import importlib
-
 import pytest
 
-
-@pytest.fixture
-def api(tmp_path, monkeypatch):
-    monkeypatch.setenv("DB_PATH", str(tmp_path / "pixels.db"))
-    from markandconquer import app
-
-    return importlib.reload(app)
+from markandconquer import app as module
 
 
 @pytest.fixture
-def client(api):
-    return api.app.test_client()
+def api():
+    """The module itself, for the constants and for the clock to patch."""
+    return module
 
 
 @pytest.fixture
-def other_client(api):
-    return api.app.test_client()
+def app(tmp_path):
+    """A fresh app per test, pointed at a database of its own. No reload
+    trick any more: create_app() is the thing that builds the state."""
+    return module.create_app(db_path=tmp_path / "pixels.db")
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+
+
+@pytest.fixture
+def other_client(app):
+    return app.test_client()
 
 
 @pytest.fixture
