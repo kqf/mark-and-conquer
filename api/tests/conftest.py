@@ -1,20 +1,10 @@
 import pytest
-from markandconquer import app as module
-
-from markandconquer import app as module
-
-
-@pytest.fixture
-def api():
-    """The module itself, for the constants and for the clock to patch."""
-    return module
+from markandconquer.app import create_app
 
 
 @pytest.fixture
 def app(tmp_path):
-    """A fresh app per test, pointed at a database of its own. No reload
-    trick any more: create_app() is the thing that builds the state."""
-    return module.create_app(db_path=tmp_path / "pixels.db")
+    return create_app(db_path=tmp_path / "pixels.db")
 
 
 @pytest.fixture
