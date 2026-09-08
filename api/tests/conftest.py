@@ -1,5 +1,4 @@
 import pytest
-
 from markandconquer.app import create_app
 
 
