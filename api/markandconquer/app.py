@@ -202,6 +202,22 @@ def create_app(db_path=None):
     app.secret_key = os.environ.get("SECRET_KEY", "dev-only-not-a-secret")
     app.permanent_session_lifetime = timedelta(days=365)
 
+    # There is no CSRF token here, and none is needed. The only write is a
+    # PUT carrying a JSON body: no cross-site form can produce that, and a
+    # cross-origin fetch() can only try it behind a preflight that we answer
+    # with no CORS headers at all. SameSite keeps the cookie off whatever
+    # else arrives cross-site. The ceiling is low regardless -- the cookie
+    # holds a random id rather than an identity, so the most a forgery could
+    # buy is one pixel the attacker could have placed themselves anyway.
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+
+    # Off by default because development is plain http on localhost. Set it
+    # in any deployment that terminates TLS.
+    app.config["SESSION_COOKIE_SECURE"] = (
+        os.environ.get("SESSION_COOKIE_SECURE", "").lower() == "true"
+    )
+
     db_path = db_path or os.environ.get("DB_PATH", "pixels.db")
     engine = create_engine(f"sqlite:///{db_path}")
 
