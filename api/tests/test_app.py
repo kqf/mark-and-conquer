@@ -1,4 +1,11 @@
 import pytest
+from markandconquer import app as module
+
+
+@pytest.fixture
+def api():
+    """The module itself, for the constants and for the clock to patch."""
+    return module
 
 
 def test_board_describes_the_canvas(client):

@@ -1,10 +1,21 @@
+from dataclasses import dataclass
+
 import pytest
-from markandconquer.app import create_app
+from markandconquer.app import COOLDOWN_MS, create_app
 
 
 @pytest.fixture
 def app(tmp_path):
     return create_app(db_path=tmp_path / "pixels.db")
+
+
+@pytest.fixture
+def api():
+    @dataclass
+    class API:
+        COOLDOWN_MS: int = COOLDOWN_MS
+
+    return API()
 
 
 @pytest.fixture
