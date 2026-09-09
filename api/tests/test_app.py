@@ -1,11 +1,5 @@
 import pytest
-from markandconquer import app as module
-
-
-@pytest.fixture
-def api():
-    """The module itself, for the constants and for the clock to patch."""
-    return module
+from markandconquer.app import COOLDOWN_MS
 
 
 def test_board_describes_the_canvas(client):
@@ -27,13 +21,11 @@ def test_placed_pixel_shows_up_on_the_board(client):
     ]
 
 
-def test_placing_a_pixel_starts_the_cooldown(client, api, clock):
+def test_placing_a_pixel_starts_the_cooldown(client, clock):
     response = client.put("/api/pixels/0/0", json={"color": "#FF4500"})
 
     assert response.status_code == 200
-    assert response.get_json() == {
-        "nextAllowedAt": clock.now + api.COOLDOWN_MS
-    }
+    assert response.get_json() == {"nextAllowedAt": clock.now + COOLDOWN_MS}
 
 
 def test_cooldown_survives_a_reload(client):
@@ -48,16 +40,14 @@ def test_cooldown_starts_at_zero(client):
     assert client.get("/api/cooldown").get_json() == {"nextAllowedAt": 0}
 
 
-def test_second_pixel_during_the_cooldown_is_rejected(client, api, clock):
+def test_second_pixel_during_the_cooldown_is_rejected(client, clock):
     client.put("/api/pixels/0/0", json={"color": "#FF4500"})
 
     response = client.put("/api/pixels/1/1", json={"color": "#FF4500"})
 
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "5"
-    assert response.get_json() == {
-        "nextAllowedAt": clock.now + api.COOLDOWN_MS
-    }
+    assert response.get_json() == {"nextAllowedAt": clock.now + COOLDOWN_MS}
 
 
 def test_pixel_rejected_by_the_cooldown_is_not_drawn(client, clock):
@@ -70,12 +60,10 @@ def test_pixel_rejected_by_the_cooldown_is_not_drawn(client, clock):
     ]
 
 
-def test_pixel_can_be_overwritten_once_the_cooldown_expires(
-    client, api, clock
-):
+def test_pixel_can_be_overwritten_once_the_cooldown_expires(client, clock):
     client.put("/api/pixels/3/4", json={"color": "#FF4500"})
 
-    clock.advance(api.COOLDOWN_MS)
+    clock.advance(COOLDOWN_MS)
     response = client.put("/api/pixels/3/4", json={"color": "#2450A4"})
 
     assert response.status_code == 200
@@ -86,7 +74,6 @@ def test_pixel_can_be_overwritten_once_the_cooldown_expires(
 
 def test_cooldown_is_per_user(client, other_client, clock):
     client.put("/api/pixels/0/0", json={"color": "#FF4500"})
-
     response = other_client.put("/api/pixels/1/1", json={"color": "#FF4500"})
     assert response.status_code == 200
 
