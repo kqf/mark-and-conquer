@@ -18,7 +18,10 @@ def other_client(app):
 
 
 @pytest.fixture
-def clock():
+def clock(monkeypatch):
+    """Freeze the server clock. The routes call now_ms() by module-global
+    lookup, so replacing it there is all it takes to own the time."""
+
     class Clock:
         def __init__(self):
             self.now = 1_700_000_000_000
@@ -26,4 +29,6 @@ def clock():
         def advance(self, ms):
             self.now += ms
 
-    return Clock()
+    clock = Clock()
+    monkeypatch.setattr("markandconquer.app.now_ms", lambda: clock.now)
+    return clock
