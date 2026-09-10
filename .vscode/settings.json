@@ -1,34 +1,8 @@
 {
-  // ---- Ruff (lint + format) ----------------------------------------------
-  // The extension only auto-discovers pyproject.toml at/above the opened
-  // folder, so point it at api/pyproject.toml explicitly.
   "ruff.configuration": "${workspaceFolder}/api/pyproject.toml",
   "ruff.importStrategy": "useBundled",
-
-  // ---- mypy ---------------------------------------------------------------
-  "mypy-type-checker.args": [
-    "--config-file=${workspaceFolder}/api/pyproject.toml"
-  ],
-  "mypy-type-checker.cwd": "${workspaceFolder}/api",
-  "mypy-type-checker.importStrategy": "useBundled",
-
-  // ---- pytest -------------------------------------------------------------
-  // Run from api/ so [tool.pytest.ini_options] and --cov=markandconquer resolve.
-  "python.testing.pytestEnabled": true,
-  "python.testing.unittestEnabled": false,
-  "python.testing.cwd": "${workspaceFolder}/api",
-  "python.testing.pytestArgs": ["tests"],
-
-  // ---- Pylance ------------------------------------------------------------
-  // So `import markandconquer` resolves even without an editable install.
   "python.analysis.extraPaths": ["${workspaceFolder}/api"],
   "python.autoComplete.extraPaths": ["${workspaceFolder}/api"],
-
-  // Interpreter: uncomment (or use "Python: Select Interpreter") if VS Code
-  // picks the wrong one. Machine-specific, hence commented out.
-  // "python.defaultInterpreterPath": "${env:HOME}/.pyenv/versions/places/bin/python",
-
-  // ---- Editor behaviour ---------------------------------------------------
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.formatOnSave": true,
