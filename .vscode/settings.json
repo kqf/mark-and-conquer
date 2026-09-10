@@ -1,0 +1,15 @@
+{
+  "ruff.configuration": "${workspaceFolder}/api/pyproject.toml",
+  "ruff.importStrategy": "useBundled",
+  "python.analysis.extraPaths": ["${workspaceFolder}/api"],
+  "python.autoComplete.extraPaths": ["${workspaceFolder}/api"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.rulers": [79],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  }
+}
