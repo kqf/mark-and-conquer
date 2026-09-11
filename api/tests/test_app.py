@@ -1,4 +1,5 @@
 import pytest
+
 from markandconquer.app import COOLDOWN_MS
 
 
