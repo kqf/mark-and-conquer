@@ -1,6 +1,11 @@
 {
   "ruff.configuration": "${workspaceFolder}/api/pyproject.toml",
-  "ruff.importStrategy": "useBundled",
+  "ruff.importStrategy": "fromEnvironment",
+  "mypy-type-checker.args": [
+    "--config-file=${workspaceFolder}/api/pyproject.toml"
+  ],
+  "mypy-type-checker.cwd": "${workspaceFolder}/api",
+  "mypy-type-checker.importStrategy": "fromEnvironment",
   "python.analysis.extraPaths": ["${workspaceFolder}/api"],
   "python.autoComplete.extraPaths": ["${workspaceFolder}/api"],
   "[python]": {
