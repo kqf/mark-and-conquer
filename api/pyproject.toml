@@ -28,6 +28,7 @@ ignore = [
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+known-first-party = ["markandconquer"]
 
 [tool.mypy]
 python_version = "3.12"
