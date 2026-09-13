@@ -1,0 +1,38 @@
+name: tests-frontend
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the tests
+        run: npm run test:coverage
+
+      - name: Run the linter
+        run: npm run lint
+
+      - name: Check the types
+        run: npm run typecheck
+
+      - name: Check the production build
+        run: npm run build
