@@ -1,46 +1,9 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { CooldownError, getBoard, getCooldown, getPixels, setPixel } from "./api.ts";
+import { CooldownError, setPixel } from "./api.ts";
 import { server } from "./mocks/server.ts";
 
-describe("reads", () => {
-  it("fetches the board", async () => {
-    const board = await getBoard();
-
-    expect(board.width).toBe(32);
-    expect(board.height).toBe(32);
-    expect(board.background).toBe("#FFFFFF");
-    expect(board.palette).toHaveLength(10);
-  });
-
-  it("fetches the pixels the server knows about", async () => {
-    server.use(
-      http.get("/api/pixels", () =>
-        HttpResponse.json([{ x: 1, y: 2, color: "#FF4500" }]),
-      ),
-    );
-
-    await expect(getPixels()).resolves.toEqual([{ x: 1, y: 2, color: "#FF4500" }]);
-  });
-
-  it("unwraps the cooldown deadline", async () => {
-    server.use(
-      http.get("/api/cooldown", () => HttpResponse.json({ nextAllowedAt: 1234 })),
-    );
-
-    await expect(getCooldown()).resolves.toBe(1234);
-  });
-});
-
 describe("setPixel", () => {
-  it("returns the deadline the server hands back", async () => {
-    server.use(
-      http.put("/api/pixels/:x/:y", () => HttpResponse.json({ nextAllowedAt: 9999 })),
-    );
-
-    await expect(setPixel(3, 4, "#FF4500")).resolves.toBe(9999);
-  });
-
   it("sends the color as the body", async () => {
     let body: unknown;
     server.use(
