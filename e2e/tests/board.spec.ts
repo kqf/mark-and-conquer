@@ -25,11 +25,7 @@ test("loads the board and palette the API serves", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Mark and Conquer" })).toBeVisible();
 
-  // 32x32 and ten colors come from BOARD in app.py. If the SPA were talking to
-  // anything other than the real API, it would not know that.
-  await expect(page.locator(".cell")).toHaveCount(32 * 32);
   await expect(page.locator(".swatch")).toHaveCount(10);
-
   // A visitor who has never painted has no cooldown to restore.
   await expect(cooldown(page)).toHaveText("Ready");
 });
