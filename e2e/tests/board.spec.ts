@@ -7,17 +7,11 @@ const GREEN = "#00A368";
 const BLUE = "#2450A4";
 const BLANK = "#FFFFFF"; // BOARD.background
 
-// Browsers report computed colors as rgb(), so the expectations have to be
-// written that way. Converting here keeps the hex above readable and keeps it
-// honest -- one place to change if the palette does.
 const rgb = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
 };
 
-// Both the cells and the swatches already carry a title, so there is nothing
-// to add to the app to make it testable. exact matters: without it "5,5" also
-// matches the cell titled "15,5".
 const cellAt = (page: Page, x: number, y: number) =>
   page.getByTitle(`${x},${y}`, { exact: true });
 
