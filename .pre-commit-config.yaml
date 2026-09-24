@@ -35,7 +35,7 @@ repos:
         args: ["--config-file", "api/pyproject.toml"]
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.407
+    rev: v1.1.414
     hooks:
       - id: pyright
         language: system
