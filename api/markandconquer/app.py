@@ -144,7 +144,7 @@ def put_pixel(x, y):
         return {"error": "Pixel out of board bounds"}, 400
 
     color = (request.get_json(silent=True) or {}).get("color")
-    if color not in BOARD["palette"]:
+    if not isinstance(color, str) or color not in BOARD["palette"]:
         return {"error": "Color not in palette"}, 400
 
     user = user_id()
