@@ -6,3 +6,4 @@ pre-commit
 ruff==0.16.3
 mypy==2.3.0
 types-PyYAML
+pyright==1.1.414
